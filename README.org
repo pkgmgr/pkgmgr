@@ -1,0 +1,21 @@
+#+TITLE: pkgmgr - a universal package manager
+#+DATE: 2021-09-08
+#+STARTUP: showall
+
+
+** About
+
+This package manager does what you want. pkgmgr isn't afraid to
+package software. We'll package X Window Server, TeX Live, macFUSE,
+any free, non-free, open-source, or closed-source software regardless
+of license.
+
+We use standard time-tested nomenclature. Packages are called
+packages. The package repository is called the package repository.
+Binaries are binaries and source code is source code.
+
+** Dependencies
+
+Any UNIX base installation should be able to bootstrap pkgmgr. For the
+most part pkgmgr is implemented with gmake (GNU Make) and sh (the
+POSIX shell or a Bourne compatible shell).

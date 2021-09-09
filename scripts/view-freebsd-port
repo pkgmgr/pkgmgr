@@ -1,0 +1,8 @@
+#!/bin/sh
+
+PORTSDIR=sources/freebsd/ports
+
+PORT=$1
+POSSIBILITIES=$(find ${PORTSDIR} -path *${PORT}/Makefile)
+
+echo ${POSSIBILITIES}

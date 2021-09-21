@@ -19,3 +19,9 @@ Binaries are binaries and source code is source code.
 Any UNIX base installation should be able to bootstrap pkgmgr. For the
 most part pkgmgr is implemented with gmake (GNU Make) and sh (the
 POSIX shell or a Bourne compatible shell).
+
+** Modes
+
+pkgmgr works in two modes: system mode and project mode. System mode
+manages packages for your operating system. Project mode manages
+packages for a project.

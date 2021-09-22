@@ -1,0 +1,17 @@
+# generic
+*.a
+*.o
+*.o.d
+*.pyc
+*.so
+*~
+.*.swp
+
+# generated
+version.h
+
+# programs
+pm
+
+# local makefile
+local.mk

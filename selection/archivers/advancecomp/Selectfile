@@ -1,4 +1,4 @@
 import pkgsrc
-description macports
-long_description pkgsrc
+desc macports
+longdesc pkgsrc
 homepage pkgsrc

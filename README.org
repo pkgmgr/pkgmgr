@@ -25,3 +25,40 @@ POSIX shell or a Bourne compatible shell).
 pkgmgr works in two modes: system mode and project mode. System mode
 manages packages for your operating system. Project mode manages
 packages for a project.
+
+** How pkgmgr curates its package repository
+
+Each package is selected from the FreeBSD Ports Collection and
+translated from a FreeBSD port into a pkgmgr package. If a package has
+a =Selectfile= it may select some variables, rules, patches, or other
+components from other sources. For instance MacPorts tends to have the
+better package descriptions, so we often import =description= and
+=long_description= from MacPorts. If another ports collection has some
+preferable attribute for a package we select the preferable attribute.
+
+Package names and categories are likewise selected based on some
+notion of better or best, but are always indexed so a user of any of
+the package managers can easily find and install packages without
+fuss.
+
+If a pakage repository has a package that others don't we try to
+include it, even if it is old, abandoned, or there's only one person
+on the planet that uses it.
+
+** Philosophy
+
+Don't do anything unless the user explicitly request it to be done.
+
+- Don't upgrade a package unless requested
+- Don't update the package repository unless requested
+- Don't remove or uninstall anything unless requested
+
+Additionally
+
+- Don't break the user's system
+- Don't break packages or builds
+- Facilitate both stable and cutting edge use
+  - A user should be able to use their packages for years without
+    needing to upgrade or reinstall
+  - A user should be able to upgrade to new versions if they choose
+- Don't be cute or clever, just work

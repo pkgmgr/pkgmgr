@@ -1,0 +1,10 @@
+#+TITLE: pkgmgr - package selection directory
+#+DATE: 2021-11-01
+#+STARTUP: showall
+
+
+** Selection
+
+The =selection= directory tree mirrors a package tree, but instead of
+packages it describes how to import the packages from other package
+managers into pkgmgr.

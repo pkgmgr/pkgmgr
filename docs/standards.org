@@ -1,0 +1,6 @@
+
+
+- https://spdx.github.io/spdx-spec/
+- https://refspecs.linuxfoundation.org/FHS_3.0/fhs-3.0.html
+- =man hier= on macOS, any Linux or BSD
+- =man filesystem= on Solaris

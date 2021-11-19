@@ -1,0 +1,13 @@
+
+
+=/usr/local/bin= is at least a default path, but there is a system for
+constructing the =PATH= variable on macOS =/usr/libexec/path_helper=
+(see =man path_helper= for documentation).
+
+It used to be possible to set =PATH+ in =/etc/launchd.conf=, but that
+does not work anymore.
+
+Now there's a few more steps. One must create an =environment.plist=
+in either =/Library/LaunchAgents= or =$HOME/Library/LaunchAgents= that
+then runs =sh= and calls =launchctl setenv=. Then =launchctl load
+$LOC/environtment.plist=.

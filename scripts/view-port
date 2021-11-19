@@ -1,0 +1,28 @@
+#!/bin/sh
+
+REPO=$1
+PORT=$2
+
+PORTSDIR=sources/freebsd/ports
+PORTFILE=Makefile
+
+case $REPO in
+    freebsd)
+        PORTSDIR=sources/freebsd/ports
+        PORTFILE=Makefile
+        ;;
+    macports)
+        PORTSDIR=sources/macports/ports
+        PORTFILE=Portfile
+        ;;
+    pkgsrc)
+        PORTSDIR=sources/pkgsrc/pkgs
+        PORTFILE=Makefile
+        ;;
+    *)
+esac
+
+POSSIBILITIES=$(find ${PORTSDIR} -path "*${PORT}/${PORTFILE}")
+POSSIBILITIES=$(echo "${POSSIBILITIES}" | tr " " "\n")
+
+echo "${POSSIBILITIES}"

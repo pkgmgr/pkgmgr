@@ -1,8 +1,3 @@
 #!/bin/sh
 
-PORTSDIR=sources/freebsd/ports
-
-PORT=$1
-POSSIBILITIES=$(find ${PORTSDIR} -path *${PORT}/Makefile)
-
-echo ${POSSIBILITIES}
+scripts/view-port freebsd "$1"

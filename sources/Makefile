@@ -17,6 +17,8 @@ deltaports_DIR=		deltaports
 
 # port repositories to clone
 REPOS += freebsd-ports
+REPOS += macports
+REPOS += pkgsrc
 
 # make targets for port repositories
 TARGETS = $(foreach r,$(REPOS),$(addsuffix /.git,$($(r)_DIR)))

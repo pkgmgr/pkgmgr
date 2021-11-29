@@ -27,6 +27,7 @@ BR_SBIN="${BUILDROOT}/sbin"
 BR_USRBIN="${BUILDROOT}/usr/bin"
 BR_USRLIB="${BUILDROOT}/usr/lib"
 BR_USRSBIN="${BUILDROOT}/usr/sbin"
+BR_USRSHARE="${BUILDROOT}/usr/share"
 
 BR_SYSTEM="${BUILDROOT}/System"
 BR_LIBRARY="${BUILDROOT}/Library"
@@ -53,7 +54,7 @@ buildchroot() {
     fi
 
     mkdir -p "${BR_BIN}" "${BR_ETC}" "${BR_VAR}" "${BR_SBIN}"
-    mkdir -p "${BR_USRBIN}" "${BR_USRLIB}" "${BR_USRSBIN}"
+    mkdir -p "${BR_USRBIN}" "${BR_USRLIB}" "${BR_USRSBIN}" "${BR_USRSHARE}"
     mkdir -p "${BR_SYSTEM}" "${BR_LIBRARY}"
     mkdir -p "${BR_DEV}" "${BR_HOME}"
 
@@ -63,6 +64,7 @@ buildchroot() {
     bindfs -r /usr/bin "${BR_USRBIN}"
     bindfs -r /usr/lib "${BR_USRLIB}"
     bindfs -r /usr/sbin "${BR_USRSBIN}"
+    bindfs -r /usr/share "${BR_USRSHARE}"
     bindfs -r /System "${BR_SYSTEM}"
     bindfs -r /Library "${BR_LIBRARY}"
 
@@ -92,6 +94,7 @@ teardownchroot() {
     umount "${BR_USRBIN}"
     umount "${BR_USRLIB}"
     umount "${BR_USRSBIN}"
+    umount "${BR_USRSHARE}"
     umount "${BR_SYSTEM}"
     umount "${BR_LIBRARY}"
 

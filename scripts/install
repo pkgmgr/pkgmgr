@@ -1,0 +1,81 @@
+#!/bin/sh
+
+# Don't use anything beyond these commands:
+#
+#    awk cat cmp cp diff echo egrep expr false grep ln ls mkdir mv
+#    printf pwd rm rmdir sed sort tar test touch tr true chgrp chmod
+#    chown uname
+#
+# And use the first available program that can download files from
+# this list:
+#
+#    curl wget openssl nc sftp ftp telnet lynx links elinks w3m
+#
+
+echo ""
+echo " _ |  _  _ _  _  _"
+echo "|_)|<(_|| | |(_|| "
+echo "|     _|      _|  "
+echo ""
+echo "Installing: pkgmgr"
+
+VERSION="0.0.1"
+echo "Version: ${VERSION}"
+echo "Working directory: ${PWD}"
+
+if [ -t 0 ]; then
+    INTERACTIVE=yes
+else
+    INTERACTIVE=no
+fi
+echo "Interactive? ${INTERACTIVE}"
+
+# net install, release, or development?
+if [ "$INTERACTIVE" = "no" ]; then
+    INST_TYPE=netinst
+    NETINST=1
+else
+    if [ -d .git ]; then
+        INST_TYPE=dev
+        DEV=1
+    elif [ -f version ]; then
+        INST_TYPE=release
+        RELEASE=1
+    fi
+fi
+echo "Install type: ${INST_TYPE}"
+
+OS="$(uname)"
+REL="$(uname -r)"
+ARCH="$(uname -m)"
+echo "Machine: ${OS} ${REL} ${ARCH}"
+
+# TODO: since MACHTYPE is undefined in the POSIX shell, find a
+# portable alternative
+CLANG_PKG="clang-${MACHTYPE}.tar.gz"
+GMAKE_PKG="gmake-${MACHTYPE}.tar.gz"
+
+download() {
+    true
+}
+
+if [ $NETINST ]; then
+    DIST_HOST="http://localhost:8000"
+    DIST_PREFIX="dist/bins"
+    DIST_BASE_URL="${DIST_HOST}/${DIST_PREFIX}"
+    echo "Distribution base: ${DIST_BASE_URL}"
+
+    CLANG_URL="${DIST_BASE_URL}/${CLANG_PKG}"
+    GMAKE_URL="${DIST_BASE_URL}/${GMAKE_PKG}"
+    echo "Fetching: ${CLANG_PKG}"
+    download "${CLANG_URL}"
+    echo "Fetching: ${GMAKE_PKG}"
+    download "${GMAKE_URL}"
+elif [ $DEV ]; then
+    true
+elif [ $RELEASE ]; then
+    true
+else
+    echo "Error: unsupported install type: ${INST_TYPE}"
+    exit 1
+fi

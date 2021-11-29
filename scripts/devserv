@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# TODO: find python version
+
+# run python 2 static file server
+# cd public && python -m SimpleHTTPServer
+
+# run python 3 static file server
+cd public && python3 -m http.server

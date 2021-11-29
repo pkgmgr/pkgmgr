@@ -1,0 +1,111 @@
+#!/bin/sh
+
+# build a chroot capable of building packages in isolation
+
+# needs option for copying files to /home
+# needs option for running a command
+# needs option for PATH
+
+# ensure we're running as root
+if [ "$(id -u)" != 0 ]; then
+    echo "Error: Must be run as root"
+    exit 1
+fi
+
+CMD=$1
+
+BUILDROOTS="${HOME}/BuildRoots"
+BUILDROOT="${BUILDROOTS}/Toolchain"
+
+BR_BIN="${BUILDROOT}/bin"
+BR_ETC="${BUILDROOT}/etc"
+BR_VAR="${BUILDROOT}/var"
+BR_SBIN="${BUILDROOT}/sbin"
+
+# we want to avoid /usr/local, so we don't blindly bind /usr, instead
+# we selectively bind /usr sub directories
+BR_USRBIN="${BUILDROOT}/usr/bin"
+BR_USRLIB="${BUILDROOT}/usr/lib"
+BR_USRSBIN="${BUILDROOT}/usr/sbin"
+
+BR_SYSTEM="${BUILDROOT}/System"
+BR_LIBRARY="${BUILDROOT}/Library"
+
+BR_HOME="${BUILDROOT}/home"
+BR_DEV="${BUILDROOT}/dev"
+
+buildchroot() {
+    # check for bindfs
+    if [ "$(command -v bindfs)" ]; then
+        echo "Has 'bindfs'"
+    else
+        echo "Error: bindfs required"
+        exit 1
+    fi
+
+    # check for working developer command line tools
+    if [ "$(command -v xcode-select)" ]; then
+        echo "Has 'xcode-select'"
+        # TODO: check for correct 'xcode-select -p' value
+    else
+        echo "Error: developer command line tools required"
+        exit 1
+    fi
+
+    mkdir -p "${BR_BIN}" "${BR_ETC}" "${BR_VAR}" "${BR_SBIN}"
+    mkdir -p "${BR_USRBIN}" "${BR_USRLIB}" "${BR_USRSBIN}"
+    mkdir -p "${BR_SYSTEM}" "${BR_LIBRARY}"
+    mkdir -p "${BR_DEV}" "${BR_HOME}"
+
+    bindfs -r /bin "${BR_BIN}"
+    bindfs /var "${BR_VAR}"
+    bindfs -r /sbin "${BR_SBIN}"
+    bindfs -r /usr/bin "${BR_USRBIN}"
+    bindfs -r /usr/lib "${BR_USRLIB}"
+    bindfs -r /usr/sbin "${BR_USRSBIN}"
+    bindfs -r /System "${BR_SYSTEM}"
+    bindfs -r /Library "${BR_LIBRARY}"
+
+    # NOTE: any place you intend to do a lot of work (e.g. compiling)
+    # can't be on a bindfs filesystem—it's just too much for bindfs
+
+    # copy login script
+    cp scripts/homes/Darwin/.profile "${BR_HOME}"
+
+    # TODO: copy files
+    # cp bootstrap/cmake-3.22.0.tar.gz "${BR_HOME}"
+    # cp bootstrap/apple-clang-12.0.0.tar.gz "${BR_HOME}"
+
+    # TODO: exec command
+
+    # clear the environment and set HOME, TERM, PS1, and PATH
+    chroot "${BUILDROOT}" /usr/bin/env -i \
+           HOME=/home TERM="$TERM" PS1='BuildRoot> ' \
+           PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin \
+           /bin/sh --login +h
+}
+
+teardownchroot() {
+    umount "${BR_BIN}"
+    umount "${BR_VAR}"
+    umount "${BR_SBIN}"
+    umount "${BR_USRBIN}"
+    umount "${BR_USRLIB}"
+    umount "${BR_USRSBIN}"
+    umount "${BR_SYSTEM}"
+    umount "${BR_LIBRARY}"
+
+    # rm -rf ${BUILDROOT}
+}
+
+case $CMD in
+    build)
+        buildchroot
+        ;;
+    teardown)
+        teardownchroot
+        ;;
+    *)
+        echo "Error: ${CMD} not supported"
+        exit 1
+esac

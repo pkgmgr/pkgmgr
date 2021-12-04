@@ -3,8 +3,8 @@
 # Don't use anything beyond these commands:
 #
 #    awk cat cmp cp diff echo egrep expr false grep ln ls mkdir mv
-#    printf pwd rm rmdir sed sort tar test touch tr true chgrp chmod
-#    chown uname
+#    printf pwd rm rmdir sed sort stat tar tee test touch tr true
+#    chgrp chmod chown uname
 #
 # And use the first available program that can download files from
 # this list:
@@ -45,15 +45,97 @@ else
 fi
 echo "Install type: ${INST_TYPE}"
 
-OS="$(uname)"
+OS="$(uname -s)"
 REL="$(uname -r)"
 ARCH="$(uname -m)"
-echo "Machine: ${OS} ${REL} ${ARCH}"
 
-# TODO: since MACHTYPE is undefined in the POSIX shell, find a
-# portable alternative
-CLANG_PKG="clang-${MACHTYPE}.tar.gz"
-GMAKE_PKG="gmake-${MACHTYPE}.tar.gz"
+noop(){ true ; }
+
+# NOTE: The case statement that follows is an aspirational list of
+# supported operating systems. While in the early stage of development
+# pkgmgr will support Darwin, later other *BSDs will be supported,
+# then Linux, and then others OSs.
+
+# build a LLVM-like target triple
+# see https://clang.llvm.org/docs/CrossCompilation.html#target-triple
+case "$OS" in
+    AIX) OS_AIX=1; noop $OS_AIX ;;
+    Darwin)
+        OS_DARWIN=1; noop $OS_DARWIN
+        OS=$(echo "$OS" | tr '[:upper:]' '[:lower:]')
+        REL=${REL%%.*}
+        VENDOR="apple-"
+        SYNTHCONF="/etc/synthetic.conf"
+        APFSUTIL="/System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util"
+        PKGMGRDIR="pm"
+        PKGMGRROOT="/${PKGMGRDIR}"
+        ;;
+    DragonFly) OS_DRAGONFLY=1; noop $OS_DRAGONFLY ;;
+    FreeBSD) OS_FREEBSD=1; noop $OS_FREEBSD ;;
+    GNU) OS_GNU=1; noop $OS_GNU ;;
+    HP-UX) OS_HPUX=1; noop $OS_HPUX ;;
+    Haiku) OS_HAIKU=1; noop $OS_HAIKU ;;
+    Linux) OS_LINUX=1; noop $OS_LINUX ;;
+    NetBSD) OS_NETBSD=1; noop $OS_NETBSD ;;
+    OpenBSD) OS_OPENBSD=1; noop $OS_OPENBSD ;;
+    SunOS) OS_SUNOS=1; noop $OS_SUNOS ;;
+    *)
+        echo "${OS} not supported"
+        exit 1
+esac
+MACHTRIPLE="${ARCH}-${VENDOR}${OS}${REL}"
+echo "Machine: ${MACHTRIPLE}"
+
+if [ "$OS_DARWIN" ]; then
+    if [ "$REL" -ge "19" ]; then
+        # Catalina and beyond have a read-only system volume
+        # https://support.apple.com/en-ca/HT210650
+
+        # We use the synthetic symbolic link system to create a
+        # synthetic entry for the package manager root on the system
+        # volume at /.
+        # see 'man synthetic.conf'
+
+        echo "Creating pkgmgr root at ${PKGMGRROOT}"
+        if [ -f "$SYNTHCONF" ]; then
+            echo "Checking for existing synthetic link in ${SYNTHCONF}"
+            if grep -q "^${PKGMGRDIR}\t" "${SYNTHCONF}"; then
+                echo "Entry for '${PKGMGRDIR}' already exists"
+                unset NEEDS_LINK
+            else
+                NEEDS_LINK=1
+            fi
+        else
+            echo "Creating: ${SYNTHCONF}"
+            sudo touch "${SYNTHCONF}"
+            NEEDS_LINK=1
+        fi
+
+        echo "Ensure ${SYNTHCONF} has correct owner, group, and perms"
+        if [ "$(stat -f '%Su:%Sg:%Lp' ${SYNTHCONF})" != "root:wheel:644" ]; then
+            sudo chown root:wheel "${SYNTHCONF}"
+            sudo chmod 644 "${SYNTHCONF}"
+        fi
+
+        if [ "$NEEDS_LINK" ]; then
+            echo "Appending entry for '${PKGMGRDIR}:"
+            cat <<EOF | sudo tee -a "${SYNTHCONF}"
+${PKGMGRDIR}	System/Volumes/Data/${PKGMGRDIR}
+EOF
+            # update root fs links without reboot
+            "${APFSUTIL}" -B
+        fi
+    else
+        echo "macOS versions before Catalina are not supported at this time"
+        exit 1
+    fi
+else
+    echo "${OS} not supported at this time, but is forthcoming."
+    exit 1
+fi
+
+CLANG_PKG="clang-${MACHTRIPLE}.tar.gz"
+GMAKE_PKG="gmake-${MACHTRIPLE}.tar.gz"
 
 download() {
     true

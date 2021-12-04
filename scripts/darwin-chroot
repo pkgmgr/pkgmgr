@@ -2,6 +2,7 @@
 
 # build a chroot capable of building packages in isolation
 
+# needs option for buildroot sub directory name
 # needs option for copying files to /home
 # needs option for running a command
 # needs option for PATH

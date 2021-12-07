@@ -22,6 +22,9 @@ echo "Installing: pkgmgr"
 VERSION="0.0.1"
 echo "Version: ${VERSION}"
 echo "Working directory: ${PWD}"
+echo "Shell: ${SHELL}"
+echo "Path: ${PATH}"
+echo "Man path: ${MANPATH}"
 
 if [ -t 0 ]; then
     INTERACTIVE=yes
@@ -69,6 +72,8 @@ case "$OS" in
         APFSUTIL="/System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util"
         PKGMGRDIR="pm"
         PKGMGRROOT="/${PKGMGRDIR}"
+        SYSDATADIR="System/Volumes/Data"
+        PKGMGRPATH="/${SYSDATADIR}${PKGMGRROOT}"
         ;;
     DragonFly) OS_DRAGONFLY=1; noop $OS_DRAGONFLY ;;
     FreeBSD) OS_FREEBSD=1; noop $OS_FREEBSD ;;
@@ -112,19 +117,28 @@ if [ "$OS_DARWIN" ]; then
         fi
 
         echo "Ensure ${SYNTHCONF} has correct owner, group, and perms"
-        if [ "$(stat -f '%Su:%Sg:%Lp' ${SYNTHCONF})" != "root:wheel:644" ]; then
+        if [ "$(stat -f '%Su:%Sg:%Lp' "${SYNTHCONF}")" != "root:wheel:644" ]; then
             sudo chown root:wheel "${SYNTHCONF}"
             sudo chmod 644 "${SYNTHCONF}"
         fi
 
         if [ "$NEEDS_LINK" ]; then
             echo "Appending entry for '${PKGMGRDIR}:"
+            # ATTN: entries in /etc/synthetic.conf must not have a
+            # leading slash, so '/pm' is 'pm in the conf file
             cat <<EOF | sudo tee -a "${SYNTHCONF}"
-${PKGMGRDIR}	System/Volumes/Data/${PKGMGRDIR}
+${PKGMGRDIR}	${SYSDATADIR}${PKGMGRROOT}
 EOF
-            # update root fs links without reboot
-            "${APFSUTIL}" -B
         fi
+
+        echo "Checking for ${PKGMGRPATH}"
+        if [ ! -d "${PKGMGRPATH}" ]; then
+            echo "Creating: ${PKGMGRPATH}"
+            sudo mkdir -p "${PKGMGRPATH}"
+        fi
+
+        # update root fs links without reboot
+        "${APFSUTIL}" -B
     else
         echo "macOS versions before Catalina are not supported at this time"
         exit 1
@@ -133,6 +147,60 @@ else
     echo "${OS} not supported at this time, but is forthcoming."
     exit 1
 fi
+
+if [ -d "${PKGMGRROOT}" ]; then
+    if [ -n "$(ls -A "${PKGMGRROOT}")" ]; then
+        echo "Warning: ${PKGMGRROOT} is not empty"
+    fi
+    # /bin /etc /include /lib /libexec /sbin /share /tmp /var /pkgmgr
+
+    PM_BIN="${PKGMGRROOT}/bin"
+    PM_SBIN="${PKGMGRROOT}/sbin"
+    PM_MAN="${PKGMGRROOT}/share/man"
+
+    PM_BINS="${PM_BIN} & ${PM_SBIN}"
+
+    case $PATH in
+    *"${PM_BIN}"*)
+        echo "Entry for ${PM_BIN} exists in PATH"
+        ;;
+    *)
+        echo "PATH does not contain ${PM_BIN}"
+
+        PATHSCONF=/etc/paths
+        MANPATHSCONF=/etc/manpaths
+
+        # BUG: if /pm/sbin exists without /pm/bin we'll add a
+        # duplicate entry
+        echo "Checking for ${PM_BIN} in ${PATHSCONF}"
+        if grep -q "^${PM_BIN}" "${PATHSCONF}"; then
+            echo "Entry for '${PM_BIN}' already exists"
+        else
+            echo "Adding ${PM_BINS} to ${PATHSCONF}"
+            cat <<EOF - "${PATHSCONF}" | sudo tee "${PATHSCONF}"
+${PM_BIN}
+${PM_SBIN}
+EOF
+        fi
+
+        echo "Check for ${PM_MAN} in ${MANPATHSCONF}"
+        if grep -q "^${PM_MAN}" "${MANPATHSCONF}"; then
+            echo "Entry for '${PM_MAN}' already exists"
+        else
+            echo "Adding ${PM_MAN} to ${MANPATHSCONF}"
+            cat <<EOF - "${MANPATHSCONF}" | sudo tee "${MANPATHSCONF}"
+${PM_MAN}
+EOF
+        fi
+
+        echo "Exporting new PATH & MANPATH"
+        eval "$(/usr/libexec/path_helper -s)"
+
+        echo "PATH=${PATH}"
+        echo "MANPATH=${MANPATH}"
+    esac
+fi
+
 
 CLANG_PKG="clang-${MACHTRIPLE}.tar.gz"
 GMAKE_PKG="gmake-${MACHTRIPLE}.tar.gz"
@@ -161,3 +229,22 @@ else
     echo "Error: unsupported install type: ${INST_TYPE}"
     exit 1
 fi
+
+# NOTE: Execing a new shell can make the new paths visible to the
+# current terminal session, but it comes at a cost. Most strategies
+# don't work or they break the shell in some way.
+
+# echo "Replace process with a new login shell"
+# # this works but breaks things like vi, mg, nano, etc
+# exec -l "$SHELL" -i
+
+# TODO: run "${PM_BIN}/pm" selfcheck
+
+cat <<EOF
+
+You must quit and restart your terminal or run the following command
+to complete the instalation
+
+    eval "\$(/usr/libexec/path_helper -s)"
+
+EOF

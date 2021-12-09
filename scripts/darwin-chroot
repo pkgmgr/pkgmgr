@@ -14,9 +14,13 @@ if [ "$(id -u)" != 0 ]; then
 fi
 
 CMD=$1
+DIR=${2:-Generic}
+PREFLIGHT_SCRIPT=${3:-preflight}
+RUN_SCRIPT=${4:-runscript}
+PATH_OVERRIDE=${5:-"/bin:/usr/bin:/sbin:/usr/sbin"}
 
 BUILDROOTS="${HOME}/BuildRoots"
-BUILDROOT="${BUILDROOTS}/Toolchain"
+BUILDROOT="${BUILDROOTS}/${DIR}"
 
 BR_BIN="${BUILDROOT}/bin"
 BR_ETC="${BUILDROOT}/etc"
@@ -74,17 +78,16 @@ buildchroot() {
 
     # copy login script
     cp scripts/homes/Darwin/.profile "${BR_HOME}"
-
-    # TODO: copy files
-    # cp bootstrap/cmake-3.22.0.tar.gz "${BR_HOME}"
-    # cp bootstrap/apple-clang-12.0.0.tar.gz "${BR_HOME}"
-
-    # TODO: exec command
+    if [ -x "${PREFLIGHT_SCRIPT}" ]; then
+        echo "Found preflight script ${PREFLIGHT_SCRIPT} - executing"
+        "${PREFLIGHT_SCRIPT}"
+    fi
 
     # clear the environment and set HOME, TERM, PS1, and PATH
     chroot "${BUILDROOT}" /usr/bin/env -i \
            HOME=/home TERM="$TERM" PS1='BuildRoot> ' \
-           PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin \
+           BUILDROOT_DIR="$DIR" RUN_SCRIPT="$RUN_SCRIPT" \
+           PATH="$PATH_OVERRIDE" \
            /bin/sh --login +h
 }
 

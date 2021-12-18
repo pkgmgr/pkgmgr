@@ -14,11 +14,12 @@ struct cmd_t {
 };
 
 static struct cmd_t commands[] = {
-    { "search", cmd_search },
-    { "install", cmd_install },
-    { "upgrade", cmd_upgrade },
-    { "info", cmd_info },
     { "home", cmd_home },
+    { "info", cmd_info },
+    { "install", cmd_install },
+    { "search", cmd_search },
+    { "select", cmd_select },
+    { "upgrade", cmd_upgrade },
 };
 
 static struct cmd_t *get_cmd(const char *s)

@@ -14,11 +14,12 @@ PM_LOCAL_CONFIG ?= local.mk
 -include ${PM_LOCAL_CONFIG}
 
 LIB_OBJS :=
-LIB_OBJS += search.o
-LIB_OBJS += install.o
-LIB_OBJS += upgrade.o
-LIB_OBJS += info.o
 LIB_OBJS += home.o
+LIB_OBJS += info.o
+LIB_OBJS += install.o
+LIB_OBJS += search.o
+LIB_OBJS += select.o
+LIB_OBJS += upgrade.o
 
 PROGRAMS :=
 PROGRAMS += pm

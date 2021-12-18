@@ -1,0 +1,22 @@
+# generic
+*.a
+*.o
+*.o.d
+*.pyc
+*.so
+*~
+.*.swp
+
+# generated
+version.h
+
+# programs
+clang
+clang++
+cpp
+g++
+gcc
+ld
+
+# local makefile
+local.mk

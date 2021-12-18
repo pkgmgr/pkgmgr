@@ -74,6 +74,8 @@ case "$OS" in
         OS=$(echo "$OS" | tr '[:upper:]' '[:lower:]')
         REL=${REL%%.*}
         VENDOR="apple-"
+        MACREL=$(sw_vers -productVersion)
+        MACREL=${MACREL%.*}
         SYNTHCONF="/etc/synthetic.conf"
         APFSUTIL="/System/Library/Filesystems/apfs.fs/Contents/Resources/apfs.util"
         PKGMGRDIR="pm"
@@ -218,6 +220,11 @@ fi
 CLANG_PKG="apple-clang-${MACHTRIPLE}.tar.gz"
 GMAKE_PKG="gmake-${MACHTRIPLE}.tar.gz"
 
+DEFAULT_SDK_DIST="https://github.com/phracker/MacOSX-SDKs/releases/download"
+SDK_DIST="${PKGMGR_SDK_DIST:-$DEFAULT_SDK_DIST}"
+SDK="MacOSX${MACREL}.sdk"
+SDK_PKG="$SDK.tar.xz"
+
 DISTFILES_DIR="${PKGMGRROOT}/pkgmgr/dist/files"
 sudo mkdir -p "${DISTFILES_DIR}"
 sudo chown -R "$USER:$(id -ng)" "${PKGMGRROOT}/pkgmgr"
@@ -229,9 +236,10 @@ sudo chmod -RL 755 "${PKGMGRROOT}"
 #     sudo chmod 755 "${DISTFILES_DIR}"
 # fi
 
+# FIXME: curl -fsSLO
 download() {
     cd "${DISTFILES_DIR}" || fatal "cd ${DISTFILES_DIR} failed"
-    curl -O "$1" || fatal "unable to download $2"
+    curl -fLO "$1" || fatal "unable to download $2"
     cd - || fatal "cd - failed"
 }
 
@@ -246,9 +254,13 @@ if [ $NETINST ]; then
     GMAKE_URL="${DIST_BASE_URL}/${GMAKE_PKG}"
     echo "Fetching: ${CLANG_PKG}"
     download "${CLANG_URL}" "${CLANG_PKG}"
-    echo "Fetching: ${GMAKE_PKG}"
-    #download "${GMAKE_URL}"
+    noop "Fetching: ${GMAKE_PKG}"
     noop "${GMAKE_URL}"
+
+    echo "SDK distribution: ${SDK_DIST}"
+    SDK_URL="${SDK_DIST}/${MACREL}/${SDK_PKG}"
+    echo "Fetching: ${SDK_PKG}"
+    download "${SDK_URL}" "${SDK_PKG}"
 elif [ $DEV ]; then
     true
 elif [ $RELEASE ]; then

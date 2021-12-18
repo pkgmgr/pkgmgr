@@ -53,6 +53,12 @@ REL="$(uname -r)"
 ARCH="$(uname -m)"
 
 noop(){ true ; }
+info() { echo "$1" ; }
+warn() { echo "Warning: $1" ; }
+fatal() {
+    echo "Error: $1"
+    exit 1
+}
 
 # NOTE: The case statement that follows is an aspirational list of
 # supported operating systems. While in the early stage of development
@@ -150,9 +156,17 @@ fi
 
 if [ -d "${PKGMGRROOT}" ]; then
     if [ -n "$(ls -A "${PKGMGRROOT}")" ]; then
-        echo "Warning: ${PKGMGRROOT} is not empty"
+        warn "${PKGMGRROOT} is not empty"
     fi
-    # /bin /etc /include /lib /libexec /sbin /share /tmp /var /pkgmgr
+
+    echo "Creating ${PKGMGRROOT} tree"
+    PM_DIRS="bin etc include lib libexec sbin share tmp var pkgmgr"
+    for i in $PM_DIRS; do
+        echo "mkdir ${PKGMGRROOT}/$i"
+        sudo mkdir -p "${PKGMGRROOT}/$i"
+        sudo chown -R "$USER:$(id -ng)" "${PKGMGRROOT}/$i"
+        sudo chmod -RL 755 "${PKGMGRROOT}/$i"
+    done
 
     PM_BIN="${PKGMGRROOT}/bin"
     PM_SBIN="${PKGMGRROOT}/sbin"
@@ -201,16 +215,29 @@ EOF
     esac
 fi
 
-
-CLANG_PKG="clang-${MACHTRIPLE}.tar.gz"
+CLANG_PKG="apple-clang-${MACHTRIPLE}.tar.gz"
 GMAKE_PKG="gmake-${MACHTRIPLE}.tar.gz"
 
+DISTFILES_DIR="${PKGMGRROOT}/pkgmgr/dist/files"
+sudo mkdir -p "${DISTFILES_DIR}"
+sudo chown -R "$USER:$(id -ng)" "${PKGMGRROOT}/pkgmgr"
+sudo chmod -RL 755 "${PKGMGRROOT}"
+
+# echo "Ensure ${DISTFILES_DIR} has correct owner, group, and perms"
+# if [ "$(stat -f '%Su:%Sg:%Lp' "${DISTFILES_DIR}")" != "$USER:$(id -ng):755" ]; then
+#     sudo chown "$USER:$(id -ng)" "${DISTFILES_DIR}"
+#     sudo chmod 755 "${DISTFILES_DIR}"
+# fi
+
 download() {
-    true
+    cd "${DISTFILES_DIR}" || fatal "cd ${DISTFILES_DIR} failed"
+    curl -O "$1" || fatal "unable to download $2"
+    cd - || fatal "cd - failed"
 }
 
 if [ $NETINST ]; then
-    DIST_HOST="http://localhost:8000"
+    DEFAULT_DIST_HOST="http://localhost:8000"
+    DIST_HOST="${PKGMGR_DIST_HOST:-$DEFAULT_DIST_HOST}"
     DIST_PREFIX="dist/bins"
     DIST_BASE_URL="${DIST_HOST}/${DIST_PREFIX}"
     echo "Distribution base: ${DIST_BASE_URL}"
@@ -218,16 +245,16 @@ if [ $NETINST ]; then
     CLANG_URL="${DIST_BASE_URL}/${CLANG_PKG}"
     GMAKE_URL="${DIST_BASE_URL}/${GMAKE_PKG}"
     echo "Fetching: ${CLANG_PKG}"
-    download "${CLANG_URL}"
+    download "${CLANG_URL}" "${CLANG_PKG}"
     echo "Fetching: ${GMAKE_PKG}"
-    download "${GMAKE_URL}"
+    #download "${GMAKE_URL}"
+    noop "${GMAKE_URL}"
 elif [ $DEV ]; then
     true
 elif [ $RELEASE ]; then
     true
 else
-    echo "Error: unsupported install type: ${INST_TYPE}"
-    exit 1
+    fatal "unsupported install type: ${INST_TYPE}"
 fi
 
 # NOTE: Execing a new shell can make the new paths visible to the

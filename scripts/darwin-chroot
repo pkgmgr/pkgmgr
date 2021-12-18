@@ -2,11 +2,6 @@
 
 # build a chroot capable of building packages in isolation
 
-# needs option for buildroot sub directory name
-# needs option for copying files to /home
-# needs option for running a command
-# needs option for PATH
-
 # ensure we're running as root
 if [ "$(id -u)" != 0 ]; then
     echo "Error: Must be run as root"
@@ -33,12 +28,33 @@ BR_USRBIN="${BUILDROOT}/usr/bin"
 BR_USRLIB="${BUILDROOT}/usr/lib"
 BR_USRSBIN="${BUILDROOT}/usr/sbin"
 BR_USRSHARE="${BUILDROOT}/usr/share"
+BR_USRLIBEXEC="${BUILDROOT}/usr/libexec"
 
 BR_SYSTEM="${BUILDROOT}/System"
 BR_LIBRARY="${BUILDROOT}/Library"
 
 BR_HOME="${BUILDROOT}/home"
 BR_DEV="${BUILDROOT}/dev"
+
+# check for working developer command line tools
+if [ "$(command -v xcode-select)" ]; then
+    #echo "Has 'xcode-select'"
+    DEVELOPER_DIR=$(xcode-select -p);
+    case $DEVELOPER_DIR in
+        *Application*)
+            BIND_XCODE=1
+            XCODE_PATH=${DEVELOPER_DIR%%.app*}.app
+            BR_XCODE_PATH="${BUILDROOT}${XCODE_PATH}"
+            #echo "Xcode @ ${XCODE_PATH}"
+            ;;
+        *)
+            #echo "Toolchain @ ${DEVELOPER_DIR}"
+            true
+    esac
+else
+    echo "Error: developer command line tools required"
+    exit 1
+fi
 
 buildchroot() {
     # check for bindfs
@@ -49,17 +65,9 @@ buildchroot() {
         exit 1
     fi
 
-    # check for working developer command line tools
-    if [ "$(command -v xcode-select)" ]; then
-        echo "Has 'xcode-select'"
-        # TODO: check for correct 'xcode-select -p' value
-    else
-        echo "Error: developer command line tools required"
-        exit 1
-    fi
-
     mkdir -p "${BR_BIN}" "${BR_ETC}" "${BR_VAR}" "${BR_SBIN}"
-    mkdir -p "${BR_USRBIN}" "${BR_USRLIB}" "${BR_USRSBIN}" "${BR_USRSHARE}"
+    mkdir -p "${BR_USRBIN}" "${BR_USRLIB}" "${BR_USRSBIN}" "${BR_USRSHARE}" \
+          "${BR_USRLIBEXEC}"
     mkdir -p "${BR_SYSTEM}" "${BR_LIBRARY}"
     mkdir -p "${BR_DEV}" "${BR_HOME}"
 
@@ -70,8 +78,13 @@ buildchroot() {
     bindfs -r /usr/lib "${BR_USRLIB}"
     bindfs -r /usr/sbin "${BR_USRSBIN}"
     bindfs -r /usr/share "${BR_USRSHARE}"
+    bindfs -r /usr/libexec "${BR_USRLIBEXEC}"
     bindfs -r /System "${BR_SYSTEM}"
     bindfs -r /Library "${BR_LIBRARY}"
+    if [ "${BIND_XCODE}" ]; then
+        mkdir -p "${BR_XCODE_PATH}"
+        bindfs -r "${XCODE_PATH}" "${BR_XCODE_PATH}"
+    fi
 
     # NOTE: any place you intend to do a lot of work (e.g. compiling)
     # can't be on a bindfs filesystem—it's just too much for bindfs
@@ -99,8 +112,12 @@ teardownchroot() {
     umount "${BR_USRLIB}"
     umount "${BR_USRSBIN}"
     umount "${BR_USRSHARE}"
+    umount "${BR_USRLIBEXEC}"
     umount "${BR_SYSTEM}"
     umount "${BR_LIBRARY}"
+    if [ "${BIND_XCODE}" ]; then
+        umount "${BR_XCODE_PATH}"
+    fi
 
     # rm -rf ${BUILDROOT}
 }

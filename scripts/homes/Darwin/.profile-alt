@@ -1,15 +1,13 @@
+# -*- mode: sh -*-
 # shellcheck shell=sh
 
 echo "Entered ${BUILDROOT_DIR} chroot; Sourcing .profile"
 
 cat <<EOF
 
-**************************************************************
-Entered chroot environment. When finished type 'exit' then run
-
-   sudo scripts/darwin-chroot teardown ${BUILDROOT_DIR}
-
-**************************************************************
+*****************************************************
+Entered chroot environment. When finished type 'exit'
+*****************************************************
 
 EOF
 

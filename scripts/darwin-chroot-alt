@@ -1,0 +1,153 @@
+#!/bin/sh
+
+# build a chroot capable of building packages in isolation using a
+# sparseimage, rather than bindfs
+
+# ensure we're running as root
+if [ "$(id -u)" != 0 ]; then
+    echo "Error: Must be run as root"
+    exit 1
+fi
+
+CMD=$1
+DIR=${2:-Generic}
+PREFLIGHT_SCRIPT=${3:-preflight}
+RUN_SCRIPT=${4:-runscript}
+PATH_OVERRIDE=${5:-"/bin:/usr/bin:/sbin:/usr/sbin"}
+
+BUILDROOTS="${HOME}/BuildRoots"
+BASEIMAGE="${BUILDROOTS}/BaseImage.sparsebundle"
+SHADOWFILE="${BUILDROOTS}/BaseImage-${DIR}.shadow"
+BUILDROOT="${BUILDROOTS}/${DIR}"
+
+BASEIMAGEARGS="-size 256g"
+BASEIMAGEARGS="$BASEIMAGEARGS -fs apfs"
+BASEIMAGEARGS="$BASEIMAGEARGS -volname $DIR"
+
+cpfiles="bin sbin"
+# we want to avoid /usr/local, so we don't blindly copy /usr, instead
+# we selectively copy /usr sub directories
+cpfiles="${cpfiles} usr/bin usr/lib usr/sbin usr/share usr/libexec"
+cpfiles="${cpfiles} System/Library Library"
+cpfiles="${cpfiles} private/etc private/tmp private/var"
+mkdirs="home dev"
+# don't link /etc because we don't want /etc/.bashrc
+linkdirs="tmp var"
+
+buildchroot() {
+    # check for working developer command line tools
+    if [ "$(command -v xcode-select)" ]; then
+        echo "Has 'xcode-select'"
+        DEVELOPER_DIR=$(xcode-select -p);
+        case $DEVELOPER_DIR in
+            *Application*)
+                XCODE_PATH=${DEVELOPER_DIR%%.app*}.app
+                cpfiles="${cpfiles} ${XCODE_PATH#/}"
+                echo "Xcode @ ${XCODE_PATH}"
+                ;;
+            *)
+                echo "Toolchain @ ${DEVELOPER_DIR}"
+        esac
+    else
+        echo "Error: developer command line tools required"
+        exit 1
+    fi
+
+    echo "Creating ${BASEIMAGE}"
+    if ! hdiutil create $BASEIMAGEARGS "${BASEIMAGE}"; then
+        echo "Error: failed to creat ${BASEIMAGE}"
+        exit 1
+    fi
+
+    BASEDEV=$(hdiutil attach "${BASEIMAGE}" -mountpoint "${BUILDROOT}" \
+              -noverify 2>&1 | awk '/dev/ {if (x == 0) {print $1; x = 1}}')
+    if [ -z "$BASEDEV" ]; then
+        echo "Error: failed to attach ${BASEIMAGE}"
+        exit 1
+    fi
+    echo "Image attached as $BASEDEV"
+
+    echo "Copying chroot files into disk image"
+    for i in $cpfiles; do
+        echo "Copying: /$i"
+        pax -pe -rw "/$i" "$BUILDROOT"
+        cp /bin/pax "$BUILDROOT/bin/pax" # special case for pax (no idea why?)
+    done
+
+    echo "Making dirs and mountpoins"
+    for i in $mkdirs; do
+        echo "Make directory: $i"
+        mkdir -p "$BUILDROOT/$i"
+    done
+
+    cat > "${BUILDROOT}/bootstrap.sh" << EOF
+#!/bin/sh
+echo "Linking dirs"
+links=$linkdirs
+for i in \$links; do
+    echo "Linking /\$i => /private/\$i"
+    ln -s "/private/\$i" "/\$i"
+done
+EOF
+    chmod 755 "${BUILDROOT}/bootstrap.sh"
+    echo "Bootstrapping chroot"
+    /sbin/mount_devfs devfs "${BUILDROOT}/dev"
+    chroot "${BUILDROOT}" /bootstrap.sh && rm "${BUILDROOT}/bootstrap.sh"
+    umount -f "${BUILDROOT}/dev"
+
+    echo "Detaching: ${BASEIMAGE}"
+    hdiutil detach "$BASEDEV" -force && BASEDEV=""
+}
+
+enterchroot() {
+    BASEDEV=$(hdiutil attach "${BASEIMAGE}" \
+        -mountpoint "$BUILDROOT" \
+        -shadow "$SHADOWFILE" \
+        -noverify 2>&1 | awk '/dev/ {if (x == 0) {print $1; x = 1}}')
+    # BASEDEV=$(hdiutil attach ${BASEIMAGE} -mountpoint $BUILDROOT \
+    #           -noverify 2>&1 | awk '/dev/ {if (x == 0) {print $1; x = 1}}')
+    if [ -z "$BASEDEV" ]; then
+        echo "Error: failed to shadow ${BASEIMAGE}"
+        exit 1
+    fi
+    echo "Shadowing $BASEIMAGE attaced as $BASEDEV"
+    echo "Shadow file is $SHADOWFILE"
+
+    # copy login script
+    echo "Copying login script"
+    cp scripts/homes/Darwin/.profile-alt "$BUILDROOT/home/.profile"
+
+    if [ -x "${PREFLIGHT_SCRIPT}" ]; then
+        echo "Found preflight script ${PREFLIGHT_SCRIPT} - executing"
+        "${PREFLIGHT_SCRIPT}"
+    fi
+
+    # clear the environment and set HOME, TERM, PS1, and PATH
+    chroot "${BUILDROOT}" /usr/bin/env -i \
+           HOME=/home TERM="$TERM" PS1='BuildRoot> ' \
+           BUILDROOT_DIR="$DIR" RUN_SCRIPT="$RUN_SCRIPT" \
+           PATH="$PATH_OVERRIDE" \
+           /bin/sh --login +h
+
+    teardownchroot
+}
+
+teardownchroot() {
+    if [ -n "$BASEDEV" ]; then
+        if ! hdiutil detach "$BASEDEV" -force; then
+            echo "Warning: Unable to detach BASEDEV ($BASEDEV)"
+        fi
+    fi
+}
+
+case $CMD in
+    build)
+        buildchroot
+        ;;
+    enter)
+        enterchroot
+        ;;
+    *)
+        echo "Error: ${CMD} not supported"
+        exit 1
+esac

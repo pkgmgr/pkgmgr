@@ -163,8 +163,9 @@ if [ -d "${PKGMGRROOT}" ]; then
 
     echo "Creating ${PKGMGRROOT} tree"
     PM_DIRS="bin etc include lib libexec sbin share tmp var pkgmgr"
+    PM_DIRS="${PM_DIRS} Developer Developer/Toolchains Developer/SDKs"
     for i in $PM_DIRS; do
-        echo "mkdir ${PKGMGRROOT}/$i"
+        echo "mkdir -p ${PKGMGRROOT}/$i"
         sudo mkdir -p "${PKGMGRROOT}/$i"
         sudo chown -R "$USER:$(id -ng)" "${PKGMGRROOT}/$i"
         sudo chmod -RL 755 "${PKGMGRROOT}/$i"
@@ -217,18 +218,29 @@ EOF
     esac
 fi
 
-CLANG_PKG="apple-clang-${MACHTRIPLE}.tar.gz"
-GMAKE_PKG="gmake-${MACHTRIPLE}.tar.gz"
+CLANG_NAME="apple-clang-${MACHTRIPLE}"
+CLANG_PKG="${CLANG_NAME}.tar.gz"
+
+GMAKE_NAME="gmake-${MACHTRIPLE}"
+GMAKE_PKG="${GMAKE_NAME}.tar.gz"
 
 DEFAULT_SDK_DIST="https://github.com/phracker/MacOSX-SDKs/releases/download"
 SDK_DIST="${PKGMGR_SDK_DIST:-$DEFAULT_SDK_DIST}"
-SDK="MacOSX${MACREL}.sdk"
-SDK_PKG="$SDK.tar.xz"
+SDK_NAME="MacOSX${MACREL}.sdk"
+SDK_PKG="$SDK_NAME.tar.xz"
 
 DISTFILES_DIR="${PKGMGRROOT}/pkgmgr/dist/files"
 sudo mkdir -p "${DISTFILES_DIR}"
 sudo chown -R "$USER:$(id -ng)" "${PKGMGRROOT}/pkgmgr"
 sudo chmod -RL 755 "${PKGMGRROOT}"
+
+mk_pm_dir() {
+    pm_dir="${PKGMGRROOT}/$1"
+    base="${1%%/*}"
+    sudo mkdir -p "${pm_dir}" || fatal "could not make $1"
+    sudo chown -R "$USER:$(id -ng)" "${PKGMGRROOT}/${base}"
+    sudo chmod -RL 755 "${PKGMGRROOT}/${base}"
+}
 
 # echo "Ensure ${DISTFILES_DIR} has correct owner, group, and perms"
 # if [ "$(stat -f '%Su:%Sg:%Lp' "${DISTFILES_DIR}")" != "$USER:$(id -ng):755" ]; then
@@ -240,7 +252,7 @@ sudo chmod -RL 755 "${PKGMGRROOT}"
 download() {
     cd "${DISTFILES_DIR}" || fatal "cd ${DISTFILES_DIR} failed"
     curl -fLO "$1" || fatal "unable to download $2"
-    cd - || fatal "cd - failed"
+    cd - > /dev/null || fatal "cd - failed"
 }
 
 if [ $NETINST ]; then
@@ -268,6 +280,37 @@ elif [ $RELEASE ]; then
 else
     fatal "unsupported install type: ${INST_TYPE}"
 fi
+
+# At this point assume we have clang & sdk tar balls, paths are setup,
+# and directories are created.
+
+PM_TOOLCHAINS_DIR="/pm/Developer/Toolchains"
+PM_SDKS_DIR="/pm/Developer/SDKs"
+
+cd "${DISTFILES_DIR}" || fatal "cd ${DISTFILES_DIR} failed"
+echo "Installing: ${CLANG_PKG}"
+tar xf "${CLANG_PKG}" -C "${PM_TOOLCHAINS_DIR}" || fatal "unable to install toolchain"
+echo "Installing: ${SDK_PKG}"
+tar xf "${SDK_PKG}" -C "${PM_SDKS_DIR}" || fatal "unable to install sdk"
+cd - > /dev/null || fatal "cd - failed"
+
+PM_TC_INST_DIR="${PM_TOOLCHAINS_DIR}/${CLANG_NAME}"
+PM_SDK_INST_DIR="${PM_SDKS_DIR}/${SDK_NAME}"
+PM_VAR_SELECT_DIR="/pm/var/pkgmgr/select"
+
+# TODO: delete existing select links if they exists
+#PM_VAR_SELECT_TC="/pm/var/pkgmgr/select/toolchain"
+#PM_VAR_SELECT_SDK="/pm/var/pkgmgr/select/sdk"
+
+mk_pm_dir "var/pkgmgr/select"
+cd "${PM_VAR_SELECT_DIR}" || fatal "cd ${PM_VAR_SELECT_DIR} failed"
+echo "Slecting toolchain: ${PM_TC_INST_DIR}"
+ln -s "${PM_TC_INST_DIR}" toolchain
+echo "Slecting sdk: ${PM_SDK_INST_DIR}"
+ln -s "${PM_SDK_INST_DIR}" sdk
+cd - > /dev/null || fatal "cd - failed"
+
+# TODO: download, build, and install shims
 
 # NOTE: Execing a new shell can make the new paths visible to the
 # current terminal session, but it comes at a cost. Most strategies

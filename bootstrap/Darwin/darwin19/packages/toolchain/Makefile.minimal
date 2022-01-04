@@ -1,0 +1,6 @@
+# -*- mode: make; -*-
+
+# minimal toolchain variant
+
+# build-minimal-toolchain
+# minimal-toolchain-distribution

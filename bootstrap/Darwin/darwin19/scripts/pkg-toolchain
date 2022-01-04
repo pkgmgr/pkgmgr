@@ -1,0 +1,114 @@
+#!/bin/sh
+
+# BINS="clang-12 dsymutil llvm-cov llvm-cxxfilt llvm-dwarfdump \
+    #     llvm-nm llvm-objdump llvm-otool llvm-profdata llvm-size"
+
+BINS="clang-12 dsymutil llvm-cov llvm-cxxfilt llvm-dwarfdump \
+    llvm-nm llvm-objdump llvm-profdata llvm-size"
+
+
+BIN_RENAMES="clang-12:clang"
+
+# BIN_LINKS="cc:clang c++:clang clang++:clang c++filt:llvm-cxxfilt \
+#         dwarfdump:llvm-dwarfdump gcov:llvm-cov nm:llvm-nm \
+#         objdump:llvm-objdump otool:llvm-otool"
+
+
+BIN_LINKS="cc:clang c++:clang clang++:clang c++filt:llvm-cxxfilt \
+        dwarfdump:llvm-dwarfdump gcov:llvm-cov nm:llvm-nm \
+        objdump:llvm-objdump"
+
+INCLUDES="c++"
+
+LIBS="clang libIndexStore.dylib libLTO.dylib libclang.dylib"
+
+# Skipping man pages for now...
+
+# MANPAGES="man1/clang.1 man1/dsymutil.1 man1/llvm-cov.1 \
+#          man1/llvm-cxxfilt.1 man1/llvm-dwarfdump.1 man1/llvm-nm.1 \
+#          man1/llvm-objdump.1 man1/llvm-otool.1 man1/llvm-profdata.1 \
+#          man1/llvm-size.1"
+
+# MANLINKS="man1/c++.1:man1/clang.1 man1/c++filt.1:man1/llvm-cxxfilt.1 \
+#         man1/cc.1:man1/clang.1 man1/clang++.1:man1/clang.1 \
+#         man1/gconv.1:man1/llvm-cov.1 man1/objdump.1:llvm-objdump.1"
+
+SRC_DIR=Developer/Toolchains/LLVM12.0.0-pkgmgr-pre-alpha.xctoolchain
+
+ARCH=x86_64
+VENDOR=apple-
+OS=darwin
+REL=19
+MACHTRIPLE="${ARCH}-${VENDOR}${OS}${REL}"
+TOOLCHAIN_NAME=apple-clang-${MACHTRIPLE}
+
+DEV_DIR=Developer
+TOOLCHAINS_DIR=${DEV_DIR}/Toolchains
+TOOLCHAIN_DIR=${TOOLCHAINS_DIR}/${TOOLCHAIN_NAME}
+DEST_DIR=${DSTROOT}${TOOLCHAIN_DIR}
+
+echo "SRC_DIR $SRC_DIR"
+
+if mkdir -p $DEST_DIR; then
+    echo "Made: DEST_DIR $DEST_DIR"
+else
+    echo "Error" && exit 1
+fi
+
+if mkdir -p $DEST_DIR/usr/bin; then
+    echo "Made: $DEST_DIR/usr/bin"
+else
+    echo "Error" && exit 1
+fi
+
+echo "Copy binaries"
+for i in $BINS; do
+    echo "Copying: $i"
+    cp $SRC_DIR/usr/bin/$i $DEST_DIR/usr/bin
+done
+
+echo "Rename binaries"
+for i in $BIN_RENAMES; do
+    src=${i%%:*}
+    dest=${i#*:}
+    echo "Rename: $src => $dest"
+    mv $DEST_DIR/usr/bin/$src $DEST_DIR/usr/bin/$dest
+done
+
+echo "Link binaries"
+cd $DEST_DIR/usr/bin || exit 1
+for i in $BIN_LINKS; do
+    src=${i%%:*}
+    dest=${i#*:}
+    echo "Link: $src => $dest"
+    ln -s $dest $src
+done
+cd - || exit 1
+
+if mkdir -p $DEST_DIR/usr/include; then
+    echo "Made: $DEST_DIR/usr/include"
+else
+    echo "Error" && exit 1
+fi
+
+echo "Copy includes"
+for i in $INCLUDES; do
+    echo "Copying: $i"
+    cp -r $SRC_DIR/usr/include/$i $DEST_DIR/usr/include
+done
+
+if mkdir -p $DEST_DIR/usr/lib; then
+    echo "Made: $DEST_DIR/usr/lib"
+else
+    echo "Error" && exit 1
+fi
+
+echo "Copy libs"
+for i in $LIBS; do
+    echo "Copying: $i"
+    cp -r $SRC_DIR/usr/lib/$i $DEST_DIR/usr/lib
+done
+
+PKG=$TOOLCHAIN_NAME.tar.gz
+
+tar caf $PKG -C $TOOLCHAINS_DIR $TOOLCHAIN_NAME

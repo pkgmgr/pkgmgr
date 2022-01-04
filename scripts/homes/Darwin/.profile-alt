@@ -20,6 +20,6 @@ echo "cd $HOME"
 cd "$HOME" || echo "Warning: PWD=${PWD}"
 
 if [ -x "${RUN_SCRIPT}" ]; then
-    echo "Found ${RUN_SCRIPT} - executing"
+    echo "Found run script ${RUN_SCRIPT} - executing"
     "${RUN_SCRIPT}"
 fi

@@ -1,3 +1,5 @@
+# -*- mode: makefile-gmake; -*-
+
 # pm is derived from the following package managers
 
 freebsd-ports_REPO=	https://git.freebsd.org/ports.git

@@ -9,6 +9,8 @@ if [ "$(id -u)" != 0 ]; then
     exit 1
 fi
 
+echo $PKGMGRROOT
+
 CMD=$1
 DIR=${2:-Generic}
 PREFLIGHT_SCRIPT=${3:-preflight}
@@ -115,11 +117,11 @@ enterchroot() {
 
     # copy login script
     echo "Copying login script"
-    cp scripts/homes/Darwin/.profile-alt "$BUILDROOT/home/.profile"
+    cp $PKGMGRROOT/scripts/homes/Darwin/.profile-alt "$BUILDROOT/home/.profile"
 
     if [ -x "${PREFLIGHT_SCRIPT}" ]; then
         echo "Found preflight script ${PREFLIGHT_SCRIPT} - executing"
-        "${PREFLIGHT_SCRIPT}"
+        "${PREFLIGHT_SCRIPT}" "${DIR}"
     fi
 
     # clear the environment and set HOME, TERM, PS1, and PATH

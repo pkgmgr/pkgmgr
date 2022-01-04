@@ -1,3 +1,9 @@
+- bootstrap
+
+  Pakages and build scripts necessary to build anything needed to
+  bootstrap the package manager on the platform/version tuple (encoded
+  as subdirectories).
+
 - docs
 - makefiles
 - packages
@@ -5,4 +11,6 @@
 - selection
 - sources
 - tools
+  - emacs
   - pm
+  - shims

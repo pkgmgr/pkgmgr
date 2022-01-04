@@ -1,0 +1,42 @@
+#+TITLE: GitHub
+#+DATE: 2022-01-01
+#+STARTUP: showall
+
+Some packages distributed using GitHub require some special
+considerations. To download the source of a GitHub release you need
+the name of the tag and the format of the distribution file such as
+=.tar.gz=, GitHub uses this information to construct the source
+diestribution file. The ultimate filename is set in the HTTP headers
+sent to the client when downloading distribution file.
+
+The special consideration that needs to be accounted for is that to
+get a source package from GitHub of the form =reponame-1.4.2.tar.gz=
+that unpacks to =reponame-1.4.2= you must make the request to the tags
+archive url using just the tag as it is in the repository. In this
+example the tag must be =1.4.2= and the request url would be something
+like =github.com/orgname/reponame/archive/refs/tags/1.4.2.tar.gz=.
+
+Annoyingly, if a repository doesn't tag their releases as just the
+version number the customary package named pkgname-/<version>/.tar.gz=
+that unpacks to pkgname-/<version>/ will be messed up.
+
+When Apple moved their opensource packages to GitHub they tagged
+releases pkgname-/<version>/ resulting in filenames of the form
+pkgname-pkgname-/<version>/.tar.gz that unpacks to
+pkgname-pkgname-/<version>/.
+
+#+begin_src makefile
+DISTFILE=	$(PKGNAME)-$(PKGNAME)-$(PKGVER).tar.gz
+
+MASTERSITE=	https://github.com/apple-oss-distributions/$(PKGNAME)/archive/refs/tags
+GITHUB_TAG=	$(PKGNAME)-$(PKGVER).tar.gz
+
+PKGROOT=	src/$(PKGNAME)-$(PKGNAME)-$(PKGVER)
+#+end_src
+
+For now it is best to get Apple opensource packages from the
+=opensource.apple.com/tarballs/<pkgname>/<pkgname>-<version>.tar.gz=
+URLs. Hopefully, Apple does not take them down. Otherwise we'll have
+to resort to using the package makefile above or both curl and tar
+will have to be instructed to change the filename and the base
+directory of the tarball.

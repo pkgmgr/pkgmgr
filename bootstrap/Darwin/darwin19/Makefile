@@ -71,8 +71,16 @@ PKGMGR_SCRIPTS=$(PKGMGRROOT)scripts/
 phony += all
 all: enterchroot
 
+noop:
+
+-include $(PKGMGR_MAKEFILES)pkgmgr-vars.mk
+-include $(PKGMGR_MAKEFILES)pkgmgr-cmd.mk
 -include $(PKGMGR_MAKEFILES)download-distfiles.mk
 -include $(PKGMGR_MAKEFILES)unpack-distfiles.mk
+-include $(PKGMGR_MAKEFILES)pkgmgr-uses-rules.mk
+-include $(PKGMGR_MAKEFILES)config-cmake.mk
+-include $(PKGMGR_MAKEFILES)build-make.mk
+-include $(PKGMGR_MAKEFILES)pkgmgr-build-rules.mk
 
 ## Local rules and vars
 

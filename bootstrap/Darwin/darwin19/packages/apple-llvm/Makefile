@@ -16,9 +16,11 @@ CONFIG_TOOL=	cmake
 BUILD_TOOL=	make
 
 CONFIG_ARGS=	-G "Unix Makefiles" \
-	-DCMAKE_INSTALL_PREFIX=<install_prefix> \
+	-DCMAKE_INSTALL_PREFIX=$(HOME)/Developer \
+	-DPACKAGE_VENDOR=Apple-esque \
+	-DCLANG_VENDOR_UTI=gr.pkgm.apple-llvm \
 	-DLLVM_VERSION_SUFFIX=-pkgmgr-pre-alpha \
-	-DCLANG_VENDOR_UTI=gr.pkgm.clang \
+	-DBUG_REPORT_URL="https\://github.com/pkgmgr/apple-llvm/issues"
 	-DLLVM_CREATE_XCODE_TOOLCHAIN=On \
 	-DLLVM_ENABLE_PROJECTS="clang;libunwind;libcxx;libcxxabi" \
 	-DCMAKE_BUILD_TYPE=MinSizeRel \
@@ -28,4 +30,4 @@ CONFIG_ARGS=	-G "Unix Makefiles" \
 INSTALL_TARGET=	install-xcode-toolchain
 
 BUILD_ARTIFACT=
-INST_ARTIFACT=	$(DESTROOT)/Toolchains/$(TC_NAME).xctoolchain/Info.plist
+INST_ARTIFACT=	$(DSTROOT)/Toolchains/$(TC_NAME).xctoolchain/Info.plist

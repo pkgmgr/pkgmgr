@@ -3,9 +3,9 @@
 _defined_vars := $(.VARIABLES)
 _defined_vars += _defined_vars
 
-# NOTE: The undefine directive can not be used with a list of variable
-# or even in a loop. I consider this a bug. See 'Kludge Explanation'
-# in print-pkg-vars.mk
+# NOTE: The undefine directive can not be used with a list of
+# variables or even in a loop. I consider this a bug. See 'Kludge
+# Explanation' in print-pkg-vars.mk
 define clear-pkg-vars
 ifeq (,$(findstring print-pkg-vars,$(MAKECMDGOALS)))
 undefine BUILD_ARTIFACT

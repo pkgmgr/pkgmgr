@@ -11,7 +11,7 @@ SRCROOT=	$(PKGROOT)
 USES=		make
 DEPS=
 
-CONFIG_TOOL=	cmake-bootstrap
+CONFIG_TOOL=	sh:bootstrap
 BUILD_TOOL=	make
 
 #CONFIG_ARGS=	--prefix=<install_prefix>

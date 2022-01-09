@@ -2,5 +2,8 @@
 
 # minimal toolchain variant
 
-# build-minimal-toolchain
-# minimal-toolchain-distribution
+VARIANT=	minimal
+DEPS=		toolchain-bootstrap
+
+BUILD_RULE=	build-minimal-toolchain
+DIST_RULE=	minimal-toolchain-distribution

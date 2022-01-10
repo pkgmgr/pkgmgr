@@ -14,6 +14,7 @@ endef
 
 build-dir = $(or $($(1)_BUILD_DIR),$(BLDDIR)/$(1))
 src-dir = $(or $($(1)_SRCROOT),$($(1)_PKGROOT))
+relpath = $(subst $(space),,$(foreach _,$(subst /, ,$(1)),../))
 
 pkg-deps = $(filter $(addprefix install~,$($(1)_USES)),$(uses_targets)) \
 	$(addprefix install~,$($(1)_DEPS))
@@ -23,7 +24,13 @@ pkg-deps = $(filter $(addprefix install~,$($(1)_USES)),$(uses_targets)) \
 config-deps = $(call pkg-deps,$(1))
 config-template = config-$(1)-template
 config-rule-name = config~$($(1)_PKGNAME)
-config-tool = $(or $($(1)_CONFIG_TOOL),noop)
+config-tool = $(or $(and $(firstword $(subst :, ,$($(1)_CONFIG_TOOL)))),noop)
+config-tool-script = \
+	$(call relpath,$(call build-dir,$(1)))$(call src-dir,$(1))/$(lastword \
+		$(subst :, ,$($(1)_CONFIG_TOOL)))
+config-args = $(if $(findstring :,$($(1)_CONFIG_TOOL)),\
+	$(call config-tool-script,$(1))) \
+	$($(1)_CONFIG_ARGS)
 
 $(foreach p,$(PKGS),\
 	$(eval $(call $(call config-template,$(call config-tool,$(p))),\
@@ -31,7 +38,7 @@ $(foreach p,$(PKGS),\
 		$(call config-deps,$(p)),\
 		$($(p)_PKGNAME),\
 		$(call build-dir,$(p)),\
-		$($(p)_CONFIG_ARGS),\
+		$(call config-args,$(p)),\
 		$(call src-dir,$(p)))))
 
 ## Build rules

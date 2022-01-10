@@ -79,6 +79,7 @@ noop:
 -include $(PKGMGR_MAKEFILES)unpack-distfiles.mk
 -include $(PKGMGR_MAKEFILES)pkgmgr-uses-rules.mk
 -include $(PKGMGR_MAKEFILES)config-cmake.mk
+-include $(PKGMGR_MAKEFILES)config-sh.mk
 -include $(PKGMGR_MAKEFILES)build-make.mk
 -include $(PKGMGR_MAKEFILES)pkgmgr-build-rules.mk
 

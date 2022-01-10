@@ -1,5 +1,7 @@
 # -*- mode: makefile-gmake; -*-
 
+empty   :=
+space   := $(empty) $(empty)
 squote  := '
 # '
 

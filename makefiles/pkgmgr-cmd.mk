@@ -14,4 +14,6 @@ quiet=quiet_
 echo-cmd = $(if $($(quiet)cmd_$(1)),\
 	echo '  $(call escsq,$($(quiet)cmd_$(1)))$(echo-why)';)
 
+touch-cmd = touch $(BLDDIR)/BuildData/$$@
+
 cmd = @set -e; $(echo-cmd) $(cmd_$(1))

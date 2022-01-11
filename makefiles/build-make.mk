@@ -12,6 +12,7 @@ quiet_cmd_make = BUILD	$(2)
 define build-make-template
 $(1): $(2)
 	$(call cmd,make,$(3),$(4),$(5),$(6))
+	$(touch-cmd)
 endef
 
 quiet_cmd_make_install = INSTALL	$(2)
@@ -26,4 +27,5 @@ quiet_cmd_make_install = INSTALL	$(2)
 define install-make-template
 $(1): $(2)
 	$(call cmd,make_install,$(3),$(4),$(5),$(6))
+	$(touch-cmd)
 endef

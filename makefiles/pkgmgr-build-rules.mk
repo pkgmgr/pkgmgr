@@ -17,11 +17,23 @@ src-dir = $(or $($(1)_SRCROOT),$($(1)_PKGROOT))
 relpath = $(subst $(space),,$(foreach _,$(subst /, ,$(1)),../))
 
 pkg-deps = $(filter $(addprefix install~,$($(1)_USES)),$(uses_targets)) \
-	$(addprefix install~,$($(1)_DEPS))
+	$(addprefix install~,$($(1)_DEPS)) $(BLDDIR)/BuildData
+
+## Build dirs
+
+BUILD_DIRS = $(foreach p,$(PKGS),$(call build-dir,$(p)))
+BUILD_DIRS += $(BLDDIR)/BuildData
+
+vpath config~% $(BLDDIR)/BuildData
+vpath build~% $(BLDDIR)/BuildData
+vpath install~% $(BLDDIR)/BuildData
+
+$(BUILD_DIRS):
+	mkdir -p $@
 
 ## Config rules
 
-config-deps = $(call pkg-deps,$(1))
+config-deps = $(call pkg-deps,$(1)) $(call build-dir,$(1))
 config-template = config-$(1)-template
 config-rule-name = config~$($(1)_PKGNAME)
 config-tool = $(or $(and $(firstword $(subst :, ,$($(1)_CONFIG_TOOL)))),noop)

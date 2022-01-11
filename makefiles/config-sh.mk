@@ -6,4 +6,5 @@ quiet_cmd_config_sh = CONFIG	$(2)
 define config-sh-template
 $(1): $(2)
 	$(call cmd,config_sh,$(3),$(4),$(5))
+	$(touch-cmd)
 endef

@@ -93,7 +93,7 @@ CHROOT_PATH= "/usr/local/bin:/bin:/usr/bin:/sbin:/usr/sbin"
 phony += enterchroot
 enterchroot:
 enterchroot: download-distfiles
-	$(PKGMGRSCRIPTS)darwin-chroot-alt enter $(CHROOT_NAME) \
+	$(PKGMGR_SCRIPTS)darwin-chroot-alt enter $(CHROOT_NAME) \
 		$(CHROOT_PREFLIGHT_SCRIPT) $(CHROOT_RUN_SCRIPT) \
 		$(CHROOT_PATH)
 

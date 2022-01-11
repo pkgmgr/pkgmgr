@@ -1,0 +1,6 @@
+#+TITLE: TODO
+#+DATE: 2022-01-10
+#+STARTUP: showall
+
+* DONE keep track of built targets
+* TODO handle relative paths in CONFIG_ARGS and other places

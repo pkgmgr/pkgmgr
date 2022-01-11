@@ -12,4 +12,5 @@ quiet_cmd_cmake = CONFIG	$(2)
 define config-cmake-template
 $(1): $(2)
 	$(call cmd,cmake,$(3),$(4),$(5),$(6))
+	$(touch-cmd)
 endef

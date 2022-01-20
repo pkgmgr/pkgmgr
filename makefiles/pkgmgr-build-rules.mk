@@ -12,10 +12,6 @@ define install-noop-template
 $(1): $(2)
 endef
 
-build-dir = $(or $($(1)_BUILD_DIR),$(BLDDIR)/$(1))
-src-dir = $(or $($(1)_SRCROOT),$($(1)_PKGROOT))
-relpath = $(subst $(space),,$(foreach _,$(subst /, ,$(1)),../))
-
 pkg-deps = $(filter $(addprefix install~,$($(1)_USES)),$(uses_targets)) \
 	$(addprefix install~,$($(1)_DEPS)) $(BLDDIR)/BuildData
 

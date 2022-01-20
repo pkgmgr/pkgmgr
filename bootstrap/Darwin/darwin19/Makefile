@@ -26,6 +26,26 @@ ifeq (/home,$(TCROOT))
 undefine PKGMGRROOT
 endif
 
+## Package management
+
+# local pkgmgr config
+PKGDIR = packages
+PATCHDIR = patches
+DISTFILESDIR = dist/files
+SCRIPTSDIR  = scripts/
+
+PKGMGR_MAKEFILES= $(PKGMGRROOT)makefiles/
+PKGMGR_SCRIPTS=$(PKGMGRROOT)scripts/
+
+# packages
+-include $(PKGDIR)/index.mk
+-include $(PKGMGR_MAKEFILES)pkgmgr.mk
+
+#-include $(PKGDIR)/index.mk
+#-include $(PKGMGR_MAKEFILES)savevars.mk
+#-include $(PKGMGR_MAKEFILES)pkgmgr.mk
+#-include $(PKGMGR_MAKEFILES)restorevars.mk
+
 ## Config
 
 PREFIXDIR=
@@ -50,30 +70,13 @@ CFLAGS=
 CXXFLAGS=
 LDFLAGS=
 
-## Package management
-
-# local pkgmgr config
-PKGDIR = packages
-PATCHDIR = patches
-DISTFILESDIR = dist/files
-SCRIPTSDIR  = scripts/
-
-PKGMGR_MAKEFILES= $(PKGMGRROOT)makefiles/
-PKGMGR_SCRIPTS=$(PKGMGRROOT)scripts/
-
-# packages
--include $(PKGDIR)/index.mk
-
--include $(PKGMGR_MAKEFILES)savevars.mk
--include $(PKGMGR_MAKEFILES)pkgmgr.mk
--include $(PKGMGR_MAKEFILES)restorevars.mk
-
 phony += all
 all: enterchroot
 
 noop:
 
 -include $(PKGMGR_MAKEFILES)pkgmgr-vars.mk
+-include $(PKGMGR_MAKEFILES)pkgmgr-utilities.mk
 -include $(PKGMGR_MAKEFILES)pkgmgr-cmd.mk
 -include $(PKGMGR_MAKEFILES)download-distfiles.mk
 -include $(PKGMGR_MAKEFILES)unpack-distfiles.mk

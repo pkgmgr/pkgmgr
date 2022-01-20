@@ -3,4 +3,4 @@
 #+STARTUP: showall
 
 * DONE keep track of built targets
-* TODO handle relative paths in CONFIG_ARGS and other places
+* DONE handle relative paths in CONFIG_ARGS for cmake cache & cmake srcroot

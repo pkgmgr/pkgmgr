@@ -7,7 +7,7 @@ MASTERSITE=	https://github.com/pkgmgr/$(PKGNAME)/archive/refs/tags
 GITHUB_TAG=	$(PKGVER).tar.gz
 
 PKGROOT=	src/$(PKGNAME)-$(PKGVER)
-SRCROOT=	$(PKGROOT)
+SRCROOT=	$(PKGROOT)/llvm
 
 USES=		cmake make
 DEPS=
@@ -23,11 +23,9 @@ CONFIG_ARGS=	-G "Unix Makefiles" \
 	-DBUG_REPORT_URL="https\://github.com/pkgmgr/apple-llvm/issues" \
 	-DLLVM_CREATE_XCODE_TOOLCHAIN=On \
 	-DLLVM_ENABLE_PROJECTS="clang;libunwind;libcxx;libcxxabi" \
-	-DCMAKE_BUILD_TYPE=MinSizeRel \
-	-C $(SRCROOT)/clang/cmake/caches/Apple-stage1.cmake \
-	$(SRCROOT)/llvm
+	-DCMAKE_BUILD_TYPE=MinSizeRel
+
+CMAKE_CACHE= $(PKGROOT)/clang/cmake/caches/Apple-stage1.cmake
+CMAKE_SRCROOT= $(SRCROOT)
 
 INSTALL_TARGET=	install-xcode-toolchain
-
-BUILD_ARTIFACT=
-INST_ARTIFACT=	$(DSTROOT)/Toolchains/$(TC_NAME).xctoolchain/Info.plist

@@ -18,13 +18,15 @@
 
 /* TODO: configurable */
 /* const char *pm_root = "/pm"; */
+
 const char *select_tc_link = "/pm/var/pkgmgr/select/toolchain";
 const char *select_sdk_link = "/pm/var/pkgmgr/select/sdk";
 
 const char *tc_compiler = "/usr/bin/clang";
 const char *sdk_usr_inc = "/usr/include";
 
-const int verbose = 0;
+/* TODO: environment var configurable? */
+const int verbose = 1;
 
 int main(int argc, char **argv)
 {
@@ -78,14 +80,21 @@ int main(int argc, char **argv)
     }
     sdk_path[sdk_path_size] = 0;
 
-    new_argc = argc;
+    new_argc = argc + 1;
     new_argv = malloc(sizeof(char *) * new_argc);
     if (!new_argv) {
         err = strerror(errno);
         fprintf(stderr, "Error: malloc: %s\n", err);
         exit(7);
     }
-    cursor = 0;
+    cursor = 1;
+
+    new_argv[0] = strdup("clang");
+
+    /* NOTE: We're assuming the caller isn't providing their own
+     * -isysroot or -isystem. We should probably handle this
+     * possibility.
+     */
 
     /* add isysroot pair */
     new_argc += 2;
@@ -114,7 +123,7 @@ int main(int argc, char **argv)
 
     if (verbose) {
         for (int i = 0; i < cursor; i++)
-        fprintf(stderr, "new_argv[%d] = \"%s\"\n", i, new_argv[i]);
+            fprintf(stderr, "new_argv[%d] = \"%s\"\n", i, new_argv[i]);
     }
 
     /* copy the remaining args */
@@ -123,6 +132,8 @@ int main(int argc, char **argv)
         if (verbose)
             fprintf(stderr, "new_argv[%d] = \"%s\"\n", j, new_argv[j]);
     }
+
+    new_argv[cursor + argc + 1] = 0;
 
     /* absolute path to real compiler */
     compiler_path_len = strlen(tc_compiler) + tc_path_size;
@@ -139,7 +150,8 @@ int main(int argc, char **argv)
 
     /* run the real compiler */
     execv(compiler_path, new_argv);
-    fprintf(stderr, "Error: failed to exec %s\n", compiler_path);
+    err = strerror(errno);
+    fprintf(stderr, "Error: failed to exec %s: %s\n", compiler_path, err);
 
     return 0;
 }

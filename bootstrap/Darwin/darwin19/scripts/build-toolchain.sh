@@ -9,9 +9,9 @@ fatal() {
 }
 
 if [ -x /usr/local/bin/make ]; then
-    info "gnu make already installed"
+    info "GNU Make already installed, skipping"
 else
-    info "build and install make"
+    info "Build and install GNU Make"
     mkdir -p src build/make || fatal "could not make src & build/make dirs"
     tar xf dist/files/make-4.3.tar.gz -C src || fatal "cound not unpack make-4.3.tar.gz"
     cd build/make && ../../src/make-4.3/configure && make install
